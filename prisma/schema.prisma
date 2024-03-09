@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Company {
+  id    Int    @id @default(autoincrement())
+  name  String
+  cdkey String @unique @default(dbgenerated("substr(md5((random())::text), 0, 9)"))
+  Game  Game[]
+  User  User[]
+}
+
+model Game {
+  id          Int          @id @default(autoincrement())
+  title       String
+  description String?
+  messages    Json?
+  maxRetry    Int
+  difficulty  Int
+  type        GameType
+  companyId   Int?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime
+  status      GameStatus
+  category    GameCategory
+  triggers    Json?
+  Company     Company?     @relation(fields: [companyId], references: [id])
+  GamePlay    GamePlay[]
+}
+
+model GamePlay {
+  id        Int      @id @default(autoincrement())
+  gameId    Int
+  playerId  Int
+  results   Json
+  completed Boolean
+  retries   Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  Game      Game     @relation(fields: [gameId], references: [id])
+  Player    Player   @relation(fields: [playerId], references: [id])
+}
+
+model Player {
+  id         Int        @id @default(autoincrement())
+  identifier String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime
+  GamePlay   GamePlay[]
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  companyId Int
+  firstname String
+  lastname  String
+  Company   Company  @relation(fields: [companyId], references: [id])
+}
+
+enum GameCategory {
+  SKILL
+  KNOWLEDGE
+  LUCK
+}
+
+enum GameStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum GameType {
+  SYSTEM
+  COMPANY
+}
